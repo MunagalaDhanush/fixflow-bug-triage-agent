@@ -1,4 +1,16 @@
 import os
+import streamlit as st
+
+# Load API key - works both locally and on 
+# Streamlit Cloud
+GEMINI_API_KEY = (
+    os.getenv("GEMINI_API_KEY") or 
+    st.secrets.get("GEMINI_API_KEY", None)
+)
+
+if not GEMINI_API_KEY:
+    st.error("⚠️ GEMINI_API_KEY not found. Please add it to your .env file locally or Streamlit secrets in production.")
+    st.stop()
 import json
 import sqlite3
 from datetime import datetime
@@ -59,18 +71,7 @@ def save_to_db(description, title, code, risk, status="approved"):
 # Initialize DB on load
 init_db()
 
-# Function to read .env file manually
-def load_env():
-    env_vars = {}
-    if os.path.exists(".env"):
-        with open(".env", "r") as f:
-            for line in f:
-                if "=" in line:
-                    parts = line.strip().split("=", 1)
-                    if len(parts) == 2:
-                        key, value = parts
-                        env_vars[key] = value
-    return env_vars
+# Key loading moved to top level
 
 # Initialize session state
 if "analysis_results" not in st.session_state:
@@ -136,22 +137,18 @@ with st.sidebar:
         if not bug_report:
             st.error("Report missing.")
         else:
-            env = load_env()
-            api_key = env.get("GEMINI_API_KEY")
-            if not api_key:
-                st.error("API Key missing.")
-            else:
-                try:
-                    with st.spinner("Processing..."):
-                        genai.configure(api_key=api_key)
-                        model = genai.GenerativeModel('gemini-2.5-flash')
-                        sys_p = "You are an expert debugger. Generate 2 fixes in JSON. Keys: fix1, fix2 (title, code, reasoning, risk, time)."
-                        c_str = "".join([f"\nFile: {f.name}\n{f.getvalue().decode()}" for f in context_files]) if context_files else ""
-                        resp = model.generate_content([sys_p, bug_report + c_str])
-                        txt = resp.text.replace("```json", "").replace("```", "").strip()
-                        st.session_state.analysis_results = json.loads(txt)
-                        st.session_state.custom_fix_analysis = None
-                except Exception as e: st.error(f"Error: {e}")
+            api_key = GEMINI_API_KEY
+            try:
+                with st.spinner("Processing..."):
+                    genai.configure(api_key=GEMINI_API_KEY)
+                    model = genai.GenerativeModel('gemini-2.5-flash')
+                    sys_p = "You are an expert debugger. Generate 2 fixes in JSON. Keys: fix1, fix2 (title, code, reasoning, risk, time)."
+                    c_str = "".join([f"\nFile: {f.name}\n{f.getvalue().decode()}" for f in context_files]) if context_files else ""
+                    resp = model.generate_content([sys_p, bug_report + c_str])
+                    txt = resp.text.replace("```json", "").replace("```", "").strip()
+                    st.session_state.analysis_results = json.loads(txt)
+                    st.session_state.custom_fix_analysis = None
+            except Exception as e: st.error(f"Error: {e}")
 
 # Tabs
 tab1, tab2 = st.tabs(["🔍 Bug Analysis", "📊 Dashboard"])
@@ -180,8 +177,7 @@ with tab1:
             if st.button("🔍 Analyze My Fix", type="primary"):
                 try:
                     with st.spinner("Analyzing..."):
-                        env = load_env()
-                        genai.configure(api_key=env.get("GEMINI_API_KEY"))
+                        genai.configure(api_key=GEMINI_API_KEY)
                         model = genai.GenerativeModel('gemini-2.5-flash')
                         p = f"""You are a senior software architect. Analyze this developer's proposed fix against the original bug report. 
 Bug Report: {bug_report}
