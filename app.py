@@ -1,20 +1,7 @@
-import subprocess
-import sys
 import os
 import json
 import sqlite3
 from datetime import datetime
-
-# Auto-install dependencies
-def install_requirements():
-    required = ["google-generativeai", "pandas"]
-    for package in required:
-        try:
-            __import__(package.replace("-", "_"))
-        except ImportError:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-install_requirements()
 
 import google.generativeai as genai
 import streamlit as st
