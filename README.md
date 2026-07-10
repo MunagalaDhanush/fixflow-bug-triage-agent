@@ -84,7 +84,7 @@ Never commit your API key to source control. The `.gitignore` in this repo is al
 streamlit run app.py
 ```
 
-The app will be available at `http://localhost:8501`.
+The app will be available at `https://fixflow-bug-triage-agent.streamlit.app/`.
 
 ## Usage
 
@@ -102,9 +102,6 @@ This repo includes a `.devcontainer/devcontainer.json` for use with VS Code Dev 
 
 FixFlow stores triage history locally in a `fixflow.db` SQLite file, created automatically on first launch. If the database is empty, it seeds itself with sample bug/fix records so the Dashboard has data to display immediately.
 
-## License
-
-No license has been specified for this project yet. Consider adding one (e.g., MIT, Apache 2.0) if you intend for others to use or contribute to this code.
 
 ## Contributing
 
